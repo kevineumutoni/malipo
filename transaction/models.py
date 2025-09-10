@@ -43,13 +43,7 @@ class Transaction(models.Model):
     payment_transaction_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='initiated')
     callback_url = models.CharField(max_length=225, blank=True)
     
-    provider = models.ForeignKey(
-    'Pension_provider',
-    on_delete=models.SET_NULL,
-    null=True,
-    blank=True,
-    related_name='transactions'
-)
+
 
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
