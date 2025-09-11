@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'users',
     'transaction',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -124,3 +125,10 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.User'
+
+
+DARAJA_CONSUMER_KEY = 'WxAi0DySBg7v0mZfgvVTvKdshb8mtHkIgZmqwtCizkheD99a'
+DARAJA_CONSUMER_SECRET = '3GrbaRcWya67CgRAUIyTla51gZB3ug738SHPYjlka3KlrK1G1GgG6j1AsGTCtHUc'
+DARAJA_SHORTCODE = '174379'
+DARAJA_PASSKEY = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
+DARAJA_CALLBACK_URL = 'https://1234abcd.ngrok.io/api/payments/daraja-callback/'
