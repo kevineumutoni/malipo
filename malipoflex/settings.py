@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -126,9 +129,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.User'
 
-
-DARAJA_CONSUMER_KEY = 'WxAi0DySBg7v0mZfgvVTvKdshb8mtHkIgZmqwtCizkheD99a'
-DARAJA_CONSUMER_SECRET = '3GrbaRcWya67CgRAUIyTla51gZB3ug738SHPYjlka3KlrK1G1GgG6j1AsGTCtHUc'
-DARAJA_SHORTCODE = '174379'
-DARAJA_PASSKEY = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
-DARAJA_CALLBACK_URL = 'https://1234abcd.ngrok.io/api/payments/daraja-callback/'
+DARAJA_CONSUMER_KEY = os.getenv('DARAJA_CONSUMER_KEY')
+DARAJA_CONSUMER_SECRET = os.getenv('DARAJA_CONSUMER_SECRET')
+DARAJA_SHORTCODE = os.getenv('DARAJA_SHORTCODE')
+DARAJA_PASSKEY = os.getenv('DARAJA_PASSKEY')
+DARAJA_CALLBACK_URL = os.getenv('DARAJA_CALLBACK_URL')
