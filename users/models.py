@@ -19,3 +19,10 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
+
+
+class Member(models.Model):
+    member_id = models.CharField(max_length=10, primary_key=True)
+
+    def __str__(self):
+        return f"Member {self.member_id}"
