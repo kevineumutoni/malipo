@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.exceptions import ValidationError
 
+
 USER_TYPE_CHOICES = [
     ('MEMBER', 'Member'),
     ('MANAGER', 'Manager'),
