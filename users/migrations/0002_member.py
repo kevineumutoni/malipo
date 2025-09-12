@@ -6,14 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0001_initial'),
+        ("users", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Member',
+            name="Member",
             fields=[
-                ('member_id', models.CharField(max_length=10, primary_key=True, serialize=False)),
+                (
+                    "member_id",
+                    models.CharField(max_length=10, primary_key=True, serialize=False),
+                ),
             ],
         ),
     ]

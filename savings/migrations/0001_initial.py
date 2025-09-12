@@ -8,38 +8,72 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Member',
+            name="Member",
             fields=[
-                ('member_id', models.CharField(max_length=10, primary_key=True, serialize=False)),
+                (
+                    "member_id",
+                    models.CharField(max_length=10, primary_key=True, serialize=False),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='SavingsAccount',
+            name="SavingsAccount",
             fields=[
-                ('saving_id', models.CharField(max_length=10, primary_key=True, serialize=False)),
-                ('member_account_balance', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('interest_incurred', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('member', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='savings.member')),
+                (
+                    "saving_id",
+                    models.CharField(max_length=10, primary_key=True, serialize=False),
+                ),
+                (
+                    "member_account_balance",
+                    models.DecimalField(decimal_places=2, max_digits=10),
+                ),
+                (
+                    "interest_incurred",
+                    models.DecimalField(decimal_places=2, max_digits=10),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "member",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="savings.member"
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='SavingsContribution',
+            name="SavingsContribution",
             fields=[
-                ('contribution_id', models.CharField(max_length=10, primary_key=True, serialize=False)),
-                ('contributed_amount', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('pension_percentage', models.DecimalField(decimal_places=2, max_digits=3)),
-                ('pension_amount', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('vsla_amount', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('completed_at', models.DateTimeField(blank=True, null=True)),
-                ('saving', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='savings.savingsaccount')),
+                (
+                    "contribution_id",
+                    models.CharField(max_length=10, primary_key=True, serialize=False),
+                ),
+                (
+                    "contributed_amount",
+                    models.DecimalField(decimal_places=2, max_digits=10),
+                ),
+                (
+                    "pension_percentage",
+                    models.DecimalField(decimal_places=2, max_digits=3),
+                ),
+                (
+                    "pension_amount",
+                    models.DecimalField(decimal_places=2, max_digits=10),
+                ),
+                ("vsla_amount", models.DecimalField(decimal_places=2, max_digits=10)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("completed_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "saving",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="savings.savingsaccount",
+                    ),
+                ),
             ],
         ),
     ]
