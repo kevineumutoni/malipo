@@ -49,7 +49,7 @@ class Transaction(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    def clean(self):
+    def validate(self):
         if self.account_type in ['savings', 'loan_repayment'] and not self.member:
             raise ValidationError("Member is required for savings or loan repayment.")
         if self.account_type == 'loan_disbursement' and not self.manager:
