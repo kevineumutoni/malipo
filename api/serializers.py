@@ -142,3 +142,4 @@ class VerifyOTPSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError("Invalid email.")
         return data
+        
