@@ -42,6 +42,10 @@ INSTALLED_APPS = [
     "users",
     "api",
     "rest_framework",
+    "policy",
+    "pension",
+
+
 ]
 
 MIDDLEWARE = [

@@ -1,9 +1,8 @@
 from rest_framework import serializers
 from savings.models import SavingsAccount, SavingsContribution
 from vsla.models import VSLA_Account
-
-
-
+from pension.models import Pension
+from policy.models import  Policy 
 
 class SavingsAccountSerializer(serializers.ModelSerializer):
  class Meta:
@@ -70,3 +69,14 @@ class VSLAAccountSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["vsla_id", "created_at", "updated_at"]
+
+class PensionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pension
+        fields = '__all__'  
+
+
+class PolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Policy
+        fields = '__all__'  
