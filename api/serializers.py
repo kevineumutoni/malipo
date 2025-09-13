@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from loans.models import LoanAccount,LoanRepayment,Guarantor
 from transaction.models import Transaction  
 from savings.models import SavingsAccount, SavingsContribution
 from vsla.models import VSLA_Account
@@ -14,6 +15,24 @@ from django.core.mail import send_mail
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
+from pension.models import PensionAccount
+
+
+class LoanAccountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LoanAccount
+        fields = '__all__'
+
+class GuarantorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Guarantor
+        fields = '__all__'
+
+class LoanRepaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LoanRepayment
+        fields = '__all__'
+
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -228,6 +247,12 @@ class PensionSerializer(serializers.ModelSerializer):
         fields = '__all__'  
 
 
+class PensionAccountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PensionAccount
+        fields = '__all__'  
+
+        
 class PolicySerializer(serializers.ModelSerializer):
     class Meta:
         model = Policy

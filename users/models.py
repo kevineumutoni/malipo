@@ -2,6 +2,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 
+
 USER_TYPE_CHOICES = [
     ("MEMBER", "Member"),
     ("MANAGER", "Manager"),

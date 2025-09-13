@@ -1,3 +1,7 @@
+from django.shortcuts import render
+from rest_framework import viewsets
+from loans.models import LoanAccount, Guarantor, LoanRepayment
+from .serializers import LoanAccountSerializer, GuarantorSerializer, LoanRepaymentSerializer
 from rest_framework.permissions import IsAuthenticated
 from transaction.models import Transaction 
 from .serializers import TransactionSerializer 
@@ -9,17 +13,33 @@ from .serializers import (
     SavingsAccountSerializer,
     SavingsContributionSerializer,
     VSLAAccountSerializer,
+    PensionAccountSerializer,
 )
 from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from .serializers import PensionSerializer, PolicySerializer
-from pension.models import Pension
+from pension.models import Pension, PensionAccount
 from policy.models import Policy
+from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from users.models import User
 from .serializers import UserRegisterSerializer, UserLoginSerializer, UserProfileSerializer,ForgotPasswordSerializer,ResetPasswordSerializer,VerifyOTPSerializer
 from .serializers import UserSerializer
+ 
+
+class LoanAccountViewSet(viewsets.ModelViewSet):
+    queryset = LoanAccount.objects.all()
+    serializer_class = LoanAccountSerializer
+
+class GuarantorViewSet(viewsets.ModelViewSet):
+    queryset = Guarantor.objects.all()
+    serializer_class = GuarantorSerializer
+
+class LoanRepaymentViewSet(viewsets.ModelViewSet):
+    queryset = LoanRepayment.objects.all()
+    serializer_class = LoanRepaymentSerializer
+
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -110,6 +130,13 @@ class VSLAAccountViewSet(viewsets.ModelViewSet):
 class PensionViewSet(viewsets.ModelViewSet):
     queryset = Pension.objects.all()
     serializer_class = PensionSerializer
+
+
+
+class PensionAccountViewSet(viewsets.ModelViewSet):
+    queryset = PensionAccount.objects.all()
+    serializer_class = PensionAccountSerializer
+
 
 class PolicyViewSet(viewsets.ModelViewSet):
     queryset = Policy.objects.all()
