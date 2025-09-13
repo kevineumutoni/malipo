@@ -19,6 +19,7 @@ class DarajaAPI:
             response = requests.get(url, auth=HTTPBasicAuth(self.consumer_key, self.consumer_secret), timeout=10)
             response.raise_for_status()
             return response.json().get('access_token')
+            
         except Exception:
             return None
 
