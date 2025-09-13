@@ -1,9 +1,22 @@
-
-from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
+from transaction.models import Transaction 
+from .serializers import TransactionSerializer 
+from users.models import Member
+from savings.models import SavingsAccount
+from savings.models import SavingsContribution
+from vsla.models import VSLA_Account
+from .serializers import (
+    SavingsAccountSerializer,
+    SavingsContributionSerializer,
+    VSLAAccountSerializer,
+)
+from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
+from .serializers import PensionSerializer, PolicySerializer
+from pension.models import Pension
+from policy.models import Policy
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
-from rest_framework import viewsets
 from users.models import User
 from .serializers import UserRegisterSerializer, UserLoginSerializer, UserProfileSerializer,ForgotPasswordSerializer,ResetPasswordSerializer,VerifyOTPSerializer
 from .serializers import UserSerializer
@@ -68,3 +81,38 @@ class VerifyOTPView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return Response({"message": "OTP verified successfully"}, status=status.HTTP_200_OK)
+        return Response({"message": "OTP verified successfully"}, status=status.HTTP_200_OK)
+
+
+
+class TransactionViewSet(viewsets.ModelViewSet):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSerializer
+   
+class SavingsAccountViewSet(viewsets.ModelViewSet):
+    queryset = SavingsAccount.objects.select_related("member").all()
+    serializer_class = SavingsAccountSerializer
+    lookup_field = "saving_id"
+
+
+class SavingsContributionViewSet(viewsets.ModelViewSet):
+    queryset = SavingsContribution.objects.select_related("saving__member").all()
+    serializer_class = SavingsContributionSerializer
+    lookup_field = "contribution_id"
+
+
+class VSLAAccountViewSet(viewsets.ModelViewSet):
+    queryset = VSLA_Account.objects.all()
+    serializer_class = VSLAAccountSerializer
+    lookup_field = "vsla_id"
+
+
+class PensionViewSet(viewsets.ModelViewSet):
+    queryset = Pension.objects.all()
+    serializer_class = PensionSerializer
+
+class PolicyViewSet(viewsets.ModelViewSet):
+    queryset = Policy.objects.all()
+    serializer_class = PolicySerializer
+
+   

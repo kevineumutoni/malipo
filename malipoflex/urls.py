@@ -1,5 +1,5 @@
 """
-URL configuration for malipoflex project.
+URL configuration for api project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.2/topics/http/urls/
@@ -16,9 +16,19 @@ Including another URLconf
 """
 
 from django.contrib import admin
+
+from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('api.urls')), 
+    path('', include('transaction.urls')),   
 ]
+     
+ 
+
+
+
+
+
