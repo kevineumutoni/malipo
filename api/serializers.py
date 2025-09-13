@@ -14,7 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'email', 'phone_number', 'password','user_type', 'national_id', 'kra_pin', 'next_of_kin_name', 'next_of_kin_id']
+        fields = ['id', 'first_name', 'last_name','phone_number', 'password','user_type', 'national_id', 'kra_pin', 'next_of_kin_name', 'email','next_of_kin_id']
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -25,6 +25,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    email = serializers.EmailField(required=True)
     email = serializers.EmailField(
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
@@ -34,7 +35,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'user_type', 'phone_number', 'password', 'email','national_id', 'kra_pin', 'next_of_kin_name', 'next_of_kin_id']
+        fields = ['first_name', 'last_name', 'user_type', 'phone_number', 'password','national_id', 'kra_pin', 'next_of_kin_name', 'email','next_of_kin_id']
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -62,13 +63,12 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 class UserLoginSerializer(serializers.Serializer):
     phone_number = serializers.CharField()
-    email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
         phone_number = data.get("phone_number")
         password = data.get("password")
-        user = authenticate(phone_number=phone_number, password=password ,email=email)
+        user = authenticate(phone_number=phone_number, password=password)
         if not user:
             raise serializers.ValidationError("Invalid phone number or password")
         data['user'] = user
@@ -142,3 +142,4 @@ class VerifyOTPSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError("Invalid email.")
         return data
+        
