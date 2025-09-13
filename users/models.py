@@ -6,7 +6,6 @@ USER_TYPE_CHOICES = [
     ('MEMBER', 'Member'),
     ('MANAGER', 'Manager'),
 ]
-
 class User(AbstractUser):
     phone_number = models.CharField(max_length=20, unique=True, blank=True, null=True)
     user_type = models.CharField(max_length=50, choices=USER_TYPE_CHOICES, default='MEMBER')
