@@ -2,3 +2,12 @@ env/
 __pycache__/
 *.pyc
 db.sqlite3
+.env
+venv/
+.venv
+media/
+staticfiles/
+.lh
+.history
+.idea/
+.vscode/
