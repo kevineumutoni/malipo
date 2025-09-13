@@ -18,6 +18,10 @@ router.register(r'transactions', TransactionViewSet, basename='transaction')
 router.register(r"savings-accounts", views.SavingsAccountViewSet, basename="savingsaccount")
 router.register(r"savings-contributions", views.SavingsContributionViewSet, basename="savingscontribution",)
 router.register(r"vsla-accounts", views.VSLAAccountViewSet, basename="vslaaccount")
+router.register(r"pension-accounts", views.PensionAccountViewSet, basename="pensionaccount")
+
+urlpatterns = router.urls
+
 
 urlpatterns = [
     path("", include(router.urls)),

@@ -15,6 +15,8 @@ from django.core.mail import send_mail
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
+from pension.models import PensionAccount
+
 
 class LoanAccountSerializer(serializers.ModelSerializer):
     class Meta:
@@ -245,6 +247,12 @@ class PensionSerializer(serializers.ModelSerializer):
         fields = '__all__'  
 
 
+class PensionAccountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PensionAccount
+        fields = '__all__'  
+
+        
 class PolicySerializer(serializers.ModelSerializer):
     class Meta:
         model = Policy
