@@ -74,3 +74,109 @@ def daraja_callback(request):
     except Exception as e:
         print(f"Callback Error: {str(e)}")
         return JsonResponse({"ResultCode": 1, "ResultDesc": "Internal Error"}, status=500)
+
+
+
+
+
+class B2CPaymentView(APIView):
+    def post(self, request):
+        phone_number = request.data.get('phone_number')
+        amount = request.data.get('amount')
+        manager_id = request.data.get('manager_id')
+        member_id = request.data.get('member_id')
+
+        if not all([phone_number, amount, manager_id, member_id]):
+            return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
+
+    
+        trans = Transaction.objects.create(
+            transaction_type='B2C',
+            account_type='loan_disbursement',
+            amount_transacted=amount,
+            manager_id=manager_id,
+            member_id=member_id,
+            recipient_phone_number=phone_number,
+            payment_transaction_status='initiated',
+            callback_url=settings.DARAJA_CALLBACK_URL
+        )
+
+        daraja = DarajaAPI()
+        response = daraja.b2c_payment(
+            phone_number=phone_number,
+            amount=float(amount)
+        )
+
+      
+        if isinstance(response, dict) and response.get('ConversationID'):
+            trans.payment_transaction_status = 'processing'
+            trans.checkout_request_id = response.get('ConversationID', '')
+        else:
+            trans.payment_transaction_status = 'failed'
+        trans.save()
+
+        return Response(response)
+
+@api_view(['POST'])
+def b2c_callback(request):
+    try:
+        data = json.loads(request.body)
+        result_code = data.get('Result', {}).get('ResultCode')
+        conversation_id = data.get('Result', {}).get('ConversationID')
+
+        trans = Transaction.objects.filter(
+            checkout_request_id=conversation_id,
+            transaction_type='B2C'
+        ).first()
+
+        if not trans:
+            trans = Transaction.objects.filter(
+                payment_transaction_status='processing',
+                transaction_type='B2C'
+            ).first()
+
+        if trans:
+            if result_code == 0:
+                trans.payment_transaction_status = 'success'
+                trans.completed_at = timezone.now()
+            else:
+                trans.payment_transaction_status = 'failed'
+            trans.save()
+
+        return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+    except Exception as e:
+        print(f"B2C Callback Error: {str(e)}")
+        return JsonResponse({"ResultCode": 1, "ResultDesc": "Error"}, status=500)
+
+
+
+@api_view(['POST'])
+def b2b_callback(request):
+    try:
+        data = json.loads(request.body)
+        result_code = data.get('Result', {}).get('ResultCode')
+        conversation_id = data.get('Result', {}).get('ConversationID')
+
+        trans = Transaction.objects.filter(
+            checkout_request_id=conversation_id,
+            transaction_type='B2B'
+        ).first()
+
+        if not trans:
+            trans = Transaction.objects.filter(
+                payment_transaction_status='processing',
+                transaction_type='B2B'
+            ).first()
+
+        if trans:
+            if result_code == 0:
+                trans.payment_transaction_status = 'success'
+                trans.completed_at = timezone.now()
+            else:
+                trans.payment_transaction_status = 'failed'
+            trans.save()
+
+        return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+    except Exception as e:
+        print(f"B2B Callback Error: {str(e)}")
+        return JsonResponse({"ResultCode": 1, "ResultDesc": "Error"}, status=500)
