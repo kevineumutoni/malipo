@@ -6,18 +6,10 @@ from savings.models import SavingsAccount
 from savings.models import SavingsContribution
 from vsla.models import VSLA_Account
 from .serializers import (
-    MemberSerializer,
     SavingsAccountSerializer,
     SavingsContributionSerializer,
     VSLAAccountSerializer,
 )
-
-
-class MemberViewSet(viewsets.ModelViewSet):
-    queryset = Member.objects.all()
-    serializer_class = MemberSerializer
-    lookup_field = "member_id"
-
 
 class SavingsAccountViewSet(viewsets.ModelViewSet):
     queryset = SavingsAccount.objects.select_related("member").all()

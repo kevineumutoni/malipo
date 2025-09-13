@@ -1,19 +1,12 @@
 from rest_framework import serializers
-from users.models import Member
 from savings.models import SavingsAccount, SavingsContribution
 from vsla.models import VSLA_Account
 
 
-class MemberSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Member
-        fields = ["member_id"]
 
 
 class SavingsAccountSerializer(serializers.ModelSerializer):
-    member = MemberSerializer(read_only=True)
-
-    class Meta:
+ class Meta:
         model = SavingsAccount
         fields = [
             "saving_id",
