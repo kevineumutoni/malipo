@@ -30,7 +30,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -40,17 +39,25 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'users',
+    'api',
+    'rest_framework.authtoken',
     'transaction',
     'rest_framework',
     "savings",
     "vsla",
-    "users",
-    "api",
     "policy",
     "pension",
-
-
 ]
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ]
+}
+    
+
+
+
 
 
 MIDDLEWARE = [
@@ -137,6 +144,20 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 
+AUTH_USER_MODEL = 'users.User'
+
+
+import os
+from dotenv import load_dotenv
+import environ
+load_dotenv()
+
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND ")
+EMAIL_HOST= os.getenv("EMAIL_HOST")
+EMAIL_PORT= os.getenv("EMAIL_PORT")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS ")
+EMAIL_HOST_USER= os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD ")
 DARAJA_CONSUMER_KEY = os.getenv('DARAJA_CONSUMER_KEY')
 DARAJA_CONSUMER_SECRET = os.getenv('DARAJA_CONSUMER_SECRET')
 DARAJA_SHORTCODE = os.getenv('DARAJA_SHORTCODE')

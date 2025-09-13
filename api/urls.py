@@ -7,9 +7,9 @@ from .views import RegisterView, LoginView, ProfileView, UserViewSet, ForgotPass
 from rest_framework.authtoken.views import obtain_auth_token
 
 router = DefaultRouter()
+router.register(r'users', UserViewSet, basename='user')
 router.register(r'pensions', PensionViewSet)
 router.register(r'policies', PolicyViewSet)
-router.register(r'users', UserViewSet, basename='user')
 router.register(r'transactions', TransactionViewSet, basename='transaction')
 router.register(
     r"savings-accounts", views.SavingsAccountViewSet, basename="savingsaccount"
@@ -30,8 +30,7 @@ urlpatterns = [
     path('api/forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
     path('api/verify-code/', VerifyOTPView.as_view(), name='verify-code'),
     path('api/reset-password/', ResetPasswordView.as_view(), name='reset-password'),
-
-    
 ]
 
+    
 

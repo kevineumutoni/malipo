@@ -149,6 +149,7 @@ class VerifyOTPSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid email.")
         return data
         
+        
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction

@@ -10,18 +10,13 @@ from .serializers import (
     SavingsContributionSerializer,
     VSLAAccountSerializer,
 )
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from .serializers import PensionSerializer, PolicySerializer
 from pension.models import Pension
 from policy.models import Policy
-
-
-from rest_framework import generics, status
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
-from rest_framework import viewsets
 from users.models import User
 from .serializers import UserRegisterSerializer, UserLoginSerializer, UserProfileSerializer,ForgotPasswordSerializer,ResetPasswordSerializer,VerifyOTPSerializer
 from .serializers import UserSerializer
@@ -85,6 +80,7 @@ class VerifyOTPView(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        return Response({"message": "OTP verified successfully"}, status=status.HTTP_200_OK)
         return Response({"message": "OTP verified successfully"}, status=status.HTTP_200_OK)
 
 
