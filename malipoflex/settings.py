@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'users',
-    'api',
+    'loans',    
+    'api',  
     'rest_framework.authtoken',
     'transaction',
     'rest_framework',
@@ -153,7 +154,6 @@ EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() == "true"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  
-
 
 DARAJA_CONSUMER_KEY = os.getenv('DARAJA_CONSUMER_KEY')
 DARAJA_CONSUMER_SECRET = os.getenv('DARAJA_CONSUMER_SECRET')
