@@ -15,6 +15,9 @@ from .serializers import (
     VSLAAccountSerializer,
     PensionAccountSerializer,
 )
+from rest_framework.permissions import AllowAny
+from rest_framework.authentication import BasicAuthentication
+from rest_framework import permissions
 from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from .serializers import PensionSerializer, PolicySerializer
@@ -22,6 +25,7 @@ from pension.models import Pension, PensionAccount
 from policy.models import Policy
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
+from django_filters.rest_framework import DjangoFilterBackend
 from users.models import User
 from .serializers import UserRegisterSerializer, UserLoginSerializer, UserProfileSerializer,ForgotPasswordSerializer,ResetPasswordSerializer,VerifyOTPSerializer
 from .serializers import UserSerializer
@@ -165,13 +169,18 @@ class LoanRepaymentViewSet(viewsets.ModelViewSet):
 
 
 
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['user_type']
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserRegisterSerializer
+
 
 class LoginView(generics.GenericAPIView):
     serializer_class = UserLoginSerializer
@@ -225,8 +234,6 @@ class VerifyOTPView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         return Response({"message": "OTP verified successfully"}, status=status.HTTP_200_OK)
         return Response({"message": "OTP verified successfully"}, status=status.HTTP_200_OK)
-
-
 
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()

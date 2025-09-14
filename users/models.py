@@ -44,9 +44,10 @@ class User(AbstractUser):
     next_of_kin_id = models.CharField(max_length=100, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     objects = UserManager()
-    username = None
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
+
+    username= None
+    USERNAME_FIELD = 'phone_number'
+    REQUIRED_FIELDS = ['first_name','last_name','password']
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.user_type})"
@@ -55,4 +56,7 @@ class Member(models.Model):
     member_id = models.CharField(max_length=10, primary_key=True)
 
     def __str__(self):
+
         return f"Member {self.member_id}"
+
+
