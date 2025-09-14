@@ -11,8 +11,6 @@ from .models import Transaction
 from django.conf import settings
 from .models import Transaction
 
-
-
 class STKPushView(APIView):
     def post(self, request):
         serializer = STKPushSerializer(data=request.data)
@@ -49,7 +47,6 @@ class STKPushView(APIView):
 
 @api_view(['POST'])
 def daraja_callback(request):
-
     try:
         data = json.loads(request.body)
         result_code = data.get('Body', {}).get('stkCallback', {}).get('ResultCode')
@@ -69,13 +66,39 @@ def daraja_callback(request):
             trans.payment_transaction_status = 'failed'
 
         trans.save()
+
+        if trans.account_type == 'loan_repayment' and result_code == 0:
+            from loans.models import LoanRepayment, LoanAccount
+            repayment = LoanRepayment.objects.filter(transaction=trans).first()
+            if repayment:
+                loan = repayment.loan
+                loan.total_loan_repaid += repayment.loan_amount_repaid
+                loan.save()
+
+                if loan.total_loan_repaid >= loan.calculate_total_repayment():
+                    loan.loan_status = 'COMPLETED'
+                    loan.save()
+
+                print(f"Loan {loan.id} repayment recorded. Total repaid: {loan.total_loan_repaid}")
+
+        elif trans.account_type == 'savings' and result_code == 0:
+            from savings.models import SavingsContribution, SavingsAccount
+            contribution = SavingsContribution.objects.filter(transaction_id_c2b=trans).first()
+            if contribution:
+                contribution.completed_at = timezone.now()
+                contribution.save()
+
+                savings = contribution.saving
+                savings.member_account_balance += contribution.vsla_amount
+                savings.save()
+
+                print(f"Savings updated for {savings.member.first_name}")
+
         return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
 
     except Exception as e:
         print(f"Callback Error: {str(e)}")
         return JsonResponse({"ResultCode": 1, "ResultDesc": "Internal Error"}, status=500)
-
-
 
 
 
@@ -143,12 +166,20 @@ def b2c_callback(request):
                 trans.payment_transaction_status = 'failed'
             trans.save()
 
+           
+            if trans.account_type == 'loan_disbursement' and result_code == 0:
+                from loans.models import LoanAccount
+                loan = LoanAccount.objects.filter(transaction_id_b2c=trans).first()
+                if loan:
+                    loan.disbursed_at = timezone.now()
+                    loan.loan_status = 'DISBURSED'
+                    loan.save()
+                    print(f"Loan {loan.id} disbursed successfully.")
+
         return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
     except Exception as e:
         print(f"B2C Callback Error: {str(e)}")
         return JsonResponse({"ResultCode": 1, "ResultDesc": "Error"}, status=500)
-
-
 
 @api_view(['POST'])
 def b2b_callback(request):
@@ -175,6 +206,23 @@ def b2b_callback(request):
             else:
                 trans.payment_transaction_status = 'failed'
             trans.save()
+
+            
+            if result_code == 0:
+                from savings.models import SavingsContribution
+                from pension.models import PensionAccount
+                contribution = SavingsContribution.objects.filter(transaction_id_b2b=trans).first()
+                if contribution:
+                    contribution.completed_at = timezone.now()
+                    contribution.save()
+
+                    pension_account, created = PensionAccount.objects.get_or_create(
+                        member=contribution.saving.member
+                    )
+                    pension_account.total_pension_amount += contribution.pension_amount
+                    pension_account.save()
+
+                    print(f"Pension balance updated for {contribution.saving.member.first_name}")
 
         return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
     except Exception as e:

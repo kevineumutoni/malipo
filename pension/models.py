@@ -1,7 +1,6 @@
 from django.db import models
 from users.models import User as users
 
-# Create your models here.
 class Pension(models.Model):    
     STATUS_CHOICES = ['active', 'inactive'] 
     name = models.CharField(max_length=100)
