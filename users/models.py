@@ -37,8 +37,8 @@ class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     objects = UserManager()
     username= None
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['password']
+    USERNAME_FIELD = 'phone_number'
+    REQUIRED_FIELDS = ['first_name','last_name','password']
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.user_type})"
         return f"{self.first_name} {self.last_name}"
@@ -49,3 +49,5 @@ class Member(models.Model):
 
     def __str__(self):
         return f"Member {self.member_id}"
+
+

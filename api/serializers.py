@@ -31,23 +31,42 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    email = serializers.EmailField(required=True)
     email = serializers.EmailField(
+        required=True,
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
     phone_number = serializers.CharField(
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
+    user_type = serializers.ChoiceField(choices=[('member', 'Member'), ('manager', 'Manager')])
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'user_type', 'phone_number', 'password','national_id', 'kra_pin', 'next_of_kin_name', 'email','next_of_kin_id']
+        fields = ['first_name', 'last_name', 'user_type', 'phone_number', 'password', 'national_id', 'kra_pin', 'next_of_kin_name', 'email', 'next_of_kin_id']
+
+    def validate(self, data):
+        user_type = data.get('user_type')
+        
+        if user_type == 'member':
+            if not data.get('national_id'):
+                raise serializers.ValidationError({"national_id": "This field is required for members."})
+            if not data.get('next_of_kin_name'):
+                raise serializers.ValidationError({"next_of_kin_name": "This field is required for members."})
+        
+        elif user_type == 'manager':
+            if not data.get('email'):
+                raise serializers.ValidationError({"email": "This field is required for managers."})
+        else:
+            raise serializers.ValidationError({"user_type": "Invalid user type."})
+        
+        return data
 
     def create(self, validated_data):
         password = validated_data.pop('password')
         user = User(**validated_data)
         user.set_password(password)
         user.save()
+        
         if user.email:
             otp_code = str(random.randint(1000, 9999))
             cache.set(
@@ -74,13 +93,20 @@ class UserLoginSerializer(serializers.Serializer):
     def validate(self, data):
         phone_number = data.get("phone_number")
         password = data.get("password")
+
+        if not phone_number or not password:
+            raise serializers.ValidationError("Must include 'phone_number' and 'password'.")
         user = authenticate(phone_number=phone_number, password=password)
         if not user:
             raise serializers.ValidationError("Invalid phone number or password")
+
+        if user.user_type not in ["member","manager"]:
+            raise serializers.ValidationError("User type not allowed to login")
         data['user'] = user
         return data
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    profile_image = serializers.ImageField(required =False,allow_null=True)
     created_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
@@ -148,7 +174,7 @@ class VerifyOTPSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError("Invalid email.")
         return data
-        
+
         
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
