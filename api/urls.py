@@ -33,7 +33,10 @@ urlpatterns = [
     path('api/verify-code/', VerifyOTPView.as_view(), name='verify-code'),
     path('api/reset-password/', ResetPasswordView.as_view(), name='reset-password'),    
     path('api/reset-password/', ResetPasswordView.as_view(), name='reset-password'),
+    path('api/expire-guarantors/', views.expire_guarantors_manual, name='expire_guarantors'), 
 ]
+
+
 
     
 
