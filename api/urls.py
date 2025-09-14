@@ -7,6 +7,7 @@ from .views import PensionViewSet, PolicyViewSet
 from .views import RegisterView, LoginView, ProfileView, UserViewSet, ForgotPasswordView, VerifyOTPView, ResetPasswordView
 from rest_framework.authtoken.views import obtain_auth_token
 
+
 router = DefaultRouter()
 router.register(r'loan-accounts', LoanAccountViewSet)
 router.register(r'guarantors', GuarantorViewSet)
