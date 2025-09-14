@@ -1,11 +1,10 @@
 from rest_framework import serializers
-from loans.models import LoanAccount,LoanRepayment,Guarantor
-from transaction.models import Transaction  
+from loans.models import LoanAccount, LoanRepayment, Guarantor
+from transaction.models import Transaction
 from savings.models import SavingsAccount, SavingsContribution
 from vsla.models import VSLA_Account
-from pension.models import Pension
-from policy.models import  Policy 
-from rest_framework import serializers
+from pension.models import Pension, PensionAccount
+from policy.models import Policy
 from django.contrib.auth import authenticate
 from users.models import User
 import random
@@ -15,18 +14,59 @@ from django.core.mail import send_mail
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
-from pension.models import PensionAccount
 
 
 class LoanAccountSerializer(serializers.ModelSerializer):
+    total_interest = serializers.SerializerMethodField()
+    total_repayment = serializers.SerializerMethodField()
+
     class Meta:
         model = LoanAccount
         fields = '__all__'
+
+    def get_total_interest(self, obj):
+        """
+        Calculate total interest: Principal * 5% * (months/12)
+        """
+        years = obj.timeline_months / 12
+        return (obj.requested_amount * 5.00 * years) / 100
+
+    def get_total_repayment(self, obj):
+        """
+        Total repayment = Principal + Interest
+        """
+        return obj.requested_amount + self.get_total_interest(obj)
+
+    def validate(self, data):
+        member = data.get('member')
+        requested_amount = data.get('requested_amount')
+
+        if not member or requested_amount is None:
+            return data
+
+        try:
+            savings = SavingsAccount.objects.get(member=member)
+            max_allowed = savings.member_account_balance * 3
+            if requested_amount > max_allowed:
+                raise serializers.ValidationError(
+                    f"You can only borrow up to 3x your savings (KES {max_allowed:.2f}). "
+                    f"Your current savings: KES {savings.member_account_balance:.2f}"
+                )
+        except SavingsAccount.DoesNotExist:
+            raise serializers.ValidationError("You must have a savings account to apply for a loan.")
+
+        return data
+
+    def create(self, validated_data):
+        validated_data['loan_status'] = 'DRAFT'
+        return super().create(validated_data)
+
 
 class GuarantorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Guarantor
         fields = '__all__'
+
 
 class LoanRepaymentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -39,7 +79,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name','phone_number', 'password','user_type', 'national_id', 'kra_pin', 'next_of_kin_name', 'email','next_of_kin_id']
+        fields = ['id', 'first_name', 'last_name', 'phone_number', 'password', 'user_type', 'national_id', 'kra_pin', 'next_of_kin_name', 'email', 'next_of_kin_id']
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -47,6 +87,7 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -60,7 +101,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'user_type', 'phone_number', 'password','national_id', 'kra_pin', 'next_of_kin_name', 'email','next_of_kin_id']
+        fields = ['first_name', 'last_name', 'user_type', 'phone_number', 'password', 'national_id', 'kra_pin', 'next_of_kin_name', 'email', 'next_of_kin_id']
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -86,6 +127,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             )
         return user
 
+
 class UserLoginSerializer(serializers.Serializer):
     phone_number = serializers.CharField()
     password = serializers.CharField(write_only=True)
@@ -98,6 +140,7 @@ class UserLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid phone number or password")
         data['user'] = user
         return data
+
 
 class UserProfileSerializer(serializers.ModelSerializer):
     created_at = serializers.DateTimeField(read_only=True)
@@ -136,18 +179,19 @@ class ForgotPasswordSerializer(serializers.Serializer):
 class ResetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
     new_password = serializers.CharField(min_length=8)
-    confirm_password = serializers.CharField(write_only = True, min_length=8)
+    confirm_password = serializers.CharField(write_only=True, min_length=8)
 
     def validate(self, data):
         if data['new_password'] != data['confirm_password']:
             raise serializers.ValidationError("Password do not match")
         return data
+
     def save(self, **kwargs):
-        user=User.objects.get(email=self.validated_data['email'])
+        user = User.objects.get(email=self.validated_data['email'])
         user.set_password(self.validated_data['new_password'])
         user.save()
         cache.delete(f'otp_{user.id}')
-        return user    
+        return user
 
 
 class VerifyOTPSerializer(serializers.Serializer):
@@ -167,8 +211,8 @@ class VerifyOTPSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError("Invalid email.")
         return data
-        
-        
+
+
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
@@ -177,32 +221,42 @@ class TransactionSerializer(serializers.ModelSerializer):
 
 
 class SavingsAccountSerializer(serializers.ModelSerializer):
- class Meta:
+    progress_percentage = serializers.SerializerMethodField()
+    savings_target = serializers.SerializerMethodField()
+    progress_tier = serializers.SerializerMethodField()
+
+    class Meta:
         model = SavingsAccount
-        fields = [
-            "saving_id",
-            "member",
-            "member_id",
-            "member_account_balance",
-            "interest_incurred",
-            "created_at",
-            "updated_at",
-        ]
+        fields = '__all__'  
+
+    def get_progress_percentage(self, obj):
+        target = 1000.00
+        if target == 0:
+            return 0.0
+        percentage = (float(obj.member_account_balance) / target) * 100
+        return round(percentage, 2)
+    def get_savings_target(self, obj):
+        return 1000.00 
+
+    def get_progress_tier(self, obj):
+        percentage = self.get_progress_percentage(obj)
+        if percentage >= 500:
+            return "Super Saver"
+        elif percentage >= 300:
+            return  "Power Saver"
+        elif percentage >= 200:
+            return "Strong Saver"
+        elif percentage >= 100:
+            return "Target Achieved"
+        elif percentage >= 50:
+            return " On Track"
+        else:
+            return "Just Starting"
 
 class SavingsContributionSerializer(serializers.ModelSerializer):
     class Meta:
         model = SavingsContribution
-        fields = [
-            "contribution_id",
-            "saving",
-            "saving_id",
-            "contributed_amount",
-            "pension_percentage",
-            "pension_amount",
-            "vsla_amount",
-            "created_at",
-            "completed_at",
-        ]
+        fields = '__all__'
 
     def validate(self, data):
         contributed_amount = data.get("contributed_amount")
@@ -241,19 +295,21 @@ class VSLAAccountSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["vsla_id", "created_at", "updated_at"]
 
+
 class PensionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pension
-        fields = '__all__'  
+        fields = '__all__'
 
 
 class PensionAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = PensionAccount
-        fields = '__all__'  
+        fields = '__all__'
 
-        
+
 class PolicySerializer(serializers.ModelSerializer):
     class Meta:
         model = Policy
-        fields = '__all__'  
+        fields = '__all__'
+

@@ -1,7 +1,4 @@
 from django.test import TestCase
-
-# Create your tests here.
-from django.test import TestCase
 from django.contrib.auth import get_user_model
 from .models import Pension, PensionAccount
 
@@ -30,7 +27,12 @@ class PensionAccountModelTests(TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(
-            username='manager1', email='manager@example.com', password='testpass123', user_type='MANAGER'
+            email='manager@example.com',
+            password='testpass123',
+            first_name='Manager',
+            last_name='One',
+            user_type='MANAGER',
+            phone_number='+254700000001'
         )
 
     def test_create_pension_account(self):
@@ -55,5 +57,3 @@ class PensionAccountModelTests(TestCase):
             contribution_percentage=3.50,
         )
         self.assertEqual(str(pension_account), f"PensionAccount {self.user}")
-
-

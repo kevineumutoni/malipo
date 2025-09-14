@@ -1,9 +1,5 @@
 from django.db import models
 
-
-# Create your models here.
-
-
 class VSLA_Account(models.Model):
     vsla_id = models.AutoField(primary_key=True)
     account_name = models.CharField(max_length=255)
