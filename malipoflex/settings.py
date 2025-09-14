@@ -50,11 +50,7 @@ INSTALLED_APPS = [
     "pension",
     'django_filters',
 ]
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-    ],
-}
+
     
 
 
@@ -147,16 +143,16 @@ AUTH_USER_MODEL = 'users.User'
 import os
 from dotenv import load_dotenv
 
-load_dotenv()  # loads .env file
+load_dotenv()  
 
-# ✅ FIXED: No trailing spaces in keys!
+
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
 EMAIL_HOST = os.getenv("EMAIL_HOST")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))  # Convert to int!
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))  
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() == "true"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  # Optional but good practice
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  
 
 
 DARAJA_CONSUMER_KEY = os.getenv('DARAJA_CONSUMER_KEY')
