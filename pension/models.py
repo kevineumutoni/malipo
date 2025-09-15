@@ -26,7 +26,7 @@ class PensionAccount(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"PensionAccount for {self.member}"
+        return f"PensionAccount {self.member}"
 
     def get_pension_amount(self, savings_amount):       
         if not self.is_opted_in:
