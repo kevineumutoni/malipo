@@ -1,6 +1,9 @@
 from django.db import models
+from django.utils import timezone
 from users.models import User
+from pension.models import PensionAccount
 from transaction.models import Transaction
+from transaction.daraja import DarajaAPI  
 
 
 class SavingsAccount(models.Model):
@@ -15,6 +18,7 @@ class SavingsAccount(models.Model):
 
 
 class SavingsContribution(models.Model):
+    member = models.ForeignKey(User, on_delete=models.CASCADE, related_name='savings_contributions')
     saving = models.ForeignKey(SavingsAccount, on_delete=models.CASCADE, related_name='contributions')
     contributed_amount = models.DecimalField(max_digits=10, decimal_places=2)
     pension_percentage = models.DecimalField(max_digits=3, decimal_places=2)
@@ -39,3 +43,59 @@ class SavingsContribution(models.Model):
 
     def __str__(self):
         return f"Contribution for {self.saving.member.first_name}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk: 
+            try:
+                pension_account = PensionAccount.objects.get(member=self.member)
+                self.pension_amount = pension_account.get_pension_amount(self.contributed_amount)
+                self.pension_percentage = pension_account.contribution_percentage
+                self.vsla_amount = self.contributed_amount - self.pension_amount
+            except PensionAccount.DoesNotExist:
+                self.pension_amount = 0.00
+                self.pension_percentage = 0.00
+                self.vsla_amount = self.contributed_amount
+           
+          
+            self.saving.member_account_balance += self.vsla_amount
+            self.saving.save()  
+           
+            if self.pension_amount > 0:
+                try:
+                    pension_account = PensionAccount.objects.get(member=self.member)
+                    provider = getattr(pension_account, 'provider', None)
+
+                    if provider and provider.status == 'active':
+                        
+                        daraja = DarajaAPI()
+                        b2b_response = daraja.b2b_payment(
+                            receiver_shortcode=provider.payBill_number,
+                            amount=self.pension_amount
+                        )
+
+                        b2b_transaction = Transaction.objects.create(
+                            member=self.member,
+                            transaction_type='B2B',
+                            amount=self.pension_amount,
+                            provider=provider,
+                            status='processing',
+                            description=f"Pension contribution for {self.member.first_name}",
+                        )
+
+                        self.transaction_id_b2b = b2b_transaction
+
+                        if isinstance(b2b_response, dict) and b2b_response.get('ConversationID'):
+                            b2b_transaction.checkout_request_id = b2b_response.get('ConversationID')
+                            b2b_transaction.save()
+                        else:
+                            b2b_transaction.status = 'failed'
+                            b2b_transaction.save()
+                            print("B2B Request Failed:", b2b_response)
+
+                    else:
+                        print(f"No active pension provider for {self.member.first_name}")
+                except PensionAccount.DoesNotExist:
+                    pass  
+            self.completed_at = timezone.now()
+
+        super().save(*args, **kwargs)
