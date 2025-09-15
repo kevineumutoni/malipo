@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import LoanAccountViewSet, GuarantorViewSet, LoanRepaymentViewSet
 from .views import TransactionViewSet 
 from . import views
-from .views import PensionViewSet, PolicyViewSet
+from .views import PensionViewSet, PolicyViewSet,PensionAccountViewSet
 from .views import RegisterView, LoginView, ProfileView, UserViewSet, ForgotPasswordView, VerifyOTPView, ResetPasswordView
 from rest_framework.authtoken.views import obtain_auth_token
 
@@ -20,6 +20,7 @@ router.register(r"savings-accounts", views.SavingsAccountViewSet, basename="savi
 router.register(r"savings-contributions", views.SavingsContributionViewSet, basename="savingscontribution",)
 router.register(r"vsla-accounts", views.VSLAAccountViewSet, basename="vslaaccount")
 router.register(r"pension-accounts", views.PensionAccountViewSet, basename="pensionaccount")
+
 
 urlpatterns = router.urls
 
