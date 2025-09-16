@@ -4,6 +4,7 @@ from users.models import User
 from pension.models import PensionAccount
 from transaction.models import Transaction
 from transaction.daraja import DarajaAPI
+from decimal import Decimal, InvalidOperation
 
 
 class SavingsAccount(models.Model):
@@ -20,13 +21,36 @@ class SavingsAccount(models.Model):
         return f"{self.member.first_name}'s Savings: KES {self.member_account_balance}"
 
 
+
+
+
+from django.db import models
+from django.conf import settings 
+from django.utils import timezone
+from decimal import Decimal, InvalidOperation
+from transaction.models import Transaction
+
+
+from django.core.validators import MinValueValidator
+
 class SavingsContribution(models.Model):
-    member = models.ForeignKey(User, on_delete=models.CASCADE, related_name='savings_contributions')
-    saving = models.ForeignKey(SavingsAccount, on_delete=models.CASCADE, related_name='contributions')
-    contributed_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    pension_percentage = models.DecimalField(max_digits=3, decimal_places=2)
-    pension_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    vsla_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    contributed_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]  # Optional: prevent zero/negative
+    )
+    pension_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    vsla_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
     transaction_id_c2b = models.ForeignKey(
         Transaction,
         on_delete=models.SET_NULL,
@@ -42,72 +66,66 @@ class SavingsContribution(models.Model):
         related_name='b2b_contributions'
     )
     created_at = models.DateTimeField(auto_now_add=True)
-    completed_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"Contribution for {self.saving.member.first_name}"
+        return f"Contribution for {self.member.first_name} ({self.member.national_id})"
 
     def save(self, *args, **kwargs):
-        if not self.pk:  # Only on create
+        try:
+            self.contributed_amount = Decimal(str(self.contributed_amount))
+        except (InvalidOperation, ValueError, TypeError):
+            raise ValueError("contributed_amount must be a valid number")
+
+        if not self.pk:
             try:
                 pension_account = PensionAccount.objects.get(member=self.member)
-                self.pension_amount = pension_account.get_pension_amount(self.contributed_amount)
                 self.pension_percentage = pension_account.contribution_percentage
-                self.vsla_amount = self.contributed_amount - self.pension_amount
+                self.pension_amount = pension_account.get_pension_amount(self.contributed_amount)
             except PensionAccount.DoesNotExist:
-                self.pension_amount = 0.00
-                self.pension_percentage = 0.00
-                self.vsla_amount = self.contributed_amount
+                self.pension_percentage = Decimal('0.00')
+                self.pension_amount = Decimal('0.00')
 
-            # Update savings balance (VSLA portion)
+            self.vsla_amount = self.contributed_amount - self.pension_amount
             self.saving.member_account_balance += self.vsla_amount
             self.saving.save()
 
-            # Handle pension allocation
             if self.pension_amount > 0:
                 try:
                     pension_account = PensionAccount.objects.get(member=self.member)
-                    provider = getattr(pension_account, 'provider', None)
-
+                    provider = pension_account.provider
                     if provider and provider.status == 'active':
-                        # ✅ Initialize Daraja API
                         daraja = DarajaAPI()
-
-                        # ✅ Use provider's PayBill number
                         b2b_response = daraja.b2b_payment(
                             receiver_shortcode=provider.payBill_number,
                             amount=self.pension_amount
                         )
 
-                        # ✅ Create B2B Transaction — USING CORRECT FIELD NAMES
+                       
+                        national_id = self.member.national_id
+                        description = f"Pension contribution for {self.member.first_name} (ID: {national_id})"
+
                         b2b_transaction = Transaction.objects.create(
                             member=self.member,
                             transaction_type='B2B',
-                            amount_transacted=self.pension_amount,  # ✅ Was "amount" → now "amount_transacted"
-                            payment_transaction_status='processing',  # ✅ Was "status" → now "payment_transaction_status"
-                            provider=provider,  # ✅ Now exists in Transaction model
-                            description=f"Pension contribution for {self.member.first_name}",  # ✅ Now exists
-                            account_type='pension_contribution',  # ✅ Good to specify
+                            amount_transacted=self.pension_amount,
+                            payment_transaction_status='processing',
+                            provider=provider,
+                            description=description,
+                            account_type='pension_contribution',
                         )
 
+                        if isinstance(b2b_response, dict) and b2b_response.get('ConversationID'):
+                            b2b_transaction.checkout_request_id = b2b_response['ConversationID']
+                        else:
+                            b2b_transaction.payment_transaction_status = 'failed'
+
+                        b2b_transaction.save()
                         self.transaction_id_b2b = b2b_transaction
 
-                        # If Daraja accepted request
-                        if isinstance(b2b_response, dict) and b2b_response.get('ConversationID'):
-                            b2b_transaction.checkout_request_id = b2b_response.get('ConversationID')
-                            b2b_transaction.save()
-                        else:
-                            # ✅ Update using correct field name
-                            b2b_transaction.payment_transaction_status = 'failed'
-                            b2b_transaction.save()
-                            print("B2B Request Failed:", b2b_response)
+                except Exception:
+                    pass  # Silent failure — don't block contribution
 
-                    else:
-                        print(f"No active pension provider for {self.member.first_name}")
-                except PensionAccount.DoesNotExist:
-                    pass
-
-            # Mark as completed
             self.completed_at = timezone.now()
 
         super().save(*args, **kwargs)
