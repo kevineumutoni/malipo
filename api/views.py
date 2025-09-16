@@ -34,7 +34,8 @@ from django.utils import timezone
 from rest_framework.response import Response
 from django.utils import timezone
 from datetime import timedelta
- 
+from savings.models import SavingsContribution
+
 
 class LoanAccountViewSet(viewsets.ModelViewSet):
     queryset = LoanAccount.objects.all()
@@ -274,10 +275,21 @@ class SavingsAccountViewSet(viewsets.ModelViewSet):
         })
 
 
+
+
+from rest_framework import viewsets
+from savings.models import SavingsContribution
+from .serializers import SavingsContributionSerializer
+
 class SavingsContributionViewSet(viewsets.ModelViewSet):
-    queryset = SavingsContribution.objects.select_related("saving__member").all()
     serializer_class = SavingsContributionSerializer
-    lookup_field = "contribution_id"
+    queryset = SavingsContribution.objects.all()
+
+    def get_queryset(self):
+        return self.queryset.filter(member=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save()
 
 
 class VSLAAccountViewSet(viewsets.ModelViewSet):
@@ -291,14 +303,29 @@ class PensionViewSet(viewsets.ModelViewSet):
     serializer_class = PensionSerializer
 
 
+from rest_framework import generics
+from pension.models import Pension
+from .serializers import PensionSerializer
 
-class PensionAccountViewSet(viewsets.ModelViewSet):
-    queryset = PensionAccount.objects.all()
-    serializer_class = PensionAccountSerializer
+class PensionProviderListView(generics.ListAPIView):
+    serializer_class = PensionSerializer
+    queryset = Pension.objects.filter(status='active')
 
 
 class PolicyViewSet(viewsets.ModelViewSet):
     queryset = Policy.objects.all()
     serializer_class = PolicySerializer
+
+
+
+class PensionAccountViewSet(viewsets.ModelViewSet):
+    serializer_class = PensionAccountSerializer
+    queryset = PensionAccount.objects.all()
+
+    def get_queryset(self):
+        return self.queryset.filter(member=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(member=self.request.user)
 
    

@@ -15,7 +15,6 @@ from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
 
-
 class LoanAccountSerializer(serializers.ModelSerializer):
     total_interest = serializers.SerializerMethodField()
     total_repayment = serializers.SerializerMethodField()
@@ -280,35 +279,53 @@ class SavingsAccountSerializer(serializers.ModelSerializer):
         else:
             return "Just Starting"
 
+
+
+
+
 class SavingsContributionSerializer(serializers.ModelSerializer):
     class Meta:
         model = SavingsContribution
-        fields = '__all__'
-
-    def validate(self, data):
-        contributed_amount = data.get("contributed_amount")
-        pension_percentage = data.get("pension_percentage", 0)
-
-        if pension_percentage < 0 or pension_percentage > 100:
-            raise serializers.ValidationError(
-                {"pension_percentage": "Must be between 0 and 100."}
-            )
-
-        pension_amount = round(contributed_amount * (pension_percentage / 100), 2)
-        vsla_amount = round(contributed_amount - pension_amount, 2)
-        return data
+        fields = [
+            'id',
+            'member',
+            'contributed_amount',
+            'pension_percentage',
+            'pension_amount',
+            'vsla_amount',
+            'transaction_id_c2b',
+            'transaction_id_b2b',
+            'created_at',
+            'completed_at'
+        ]
+        read_only_fields = [
+            'member',
+            'pension_percentage',
+            'pension_amount',
+            'vsla_amount',
+            'transaction_id_b2b',
+            'completed_at'
+        ]
 
     def create(self, validated_data):
-        saving_id = validated_data.pop("saving_id")
-        try:
-            saving = SavingsAccount.objects.get(saving_id=saving_id)
-        except SavingsAccount.DoesNotExist:
-            raise serializers.ValidationError(
-                {"saving_id": "Savings account does not exist."}
-            )
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            raise serializers.ValidationError("User not authenticated")
 
-        return SavingsContribution.objects.create(saving=saving, **validated_data)
+        member = request.user
 
+      
+        savings_account, created = SavingsAccount.objects.get_or_create(
+            member=member,
+            defaults={'member_account_balance': 0.00}
+        )
+
+
+        return SavingsContribution.objects.create(
+            member=member,
+            saving=savings_account,
+            **validated_data
+        )
 
 class VSLAAccountSerializer(serializers.ModelSerializer):
     class Meta:
@@ -323,16 +340,54 @@ class VSLAAccountSerializer(serializers.ModelSerializer):
         read_only_fields = ["vsla_id", "created_at", "updated_at"]
 
 
+from pension.models import PensionAccount, Pension
+
 class PensionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pension
-        fields = '__all__'
-
+        fields = ['id', 'name', 'payBill_number', 'status']
 
 class PensionAccountSerializer(serializers.ModelSerializer):
+    provider_name = serializers.CharField(source='provider.name', read_only=True)
+    provider = serializers.PrimaryKeyRelatedField(
+        queryset=Pension.objects.filter(status='active'),
+        required=False,
+        allow_null=True
+    )
+
     class Meta:
         model = PensionAccount
-        fields = '__all__'
+        fields = [
+            'id',
+            'is_opted_in',
+            'contribution_percentage',
+            'total_pension_amount',
+            'provider',
+            'provider_name',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['total_pension_amount']
+
+    def create(self, validated_data):
+        member = self.context['request'].user
+        pension_account, created = PensionAccount.objects.get_or_create(
+            member=member,
+            defaults={
+                'is_opted_in': False,
+                'contribution_percentage': 0.00
+            }
+        )        
+        for attr, value in validated_data.items():
+            setattr(pension_account, attr, value)
+        pension_account.save()
+        return pension_account
+
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 
 class PolicySerializer(serializers.ModelSerializer):
