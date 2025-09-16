@@ -14,6 +14,7 @@ from django.core.mail import send_mail
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
+from savings.models import SavingsContribution
 
 class LoanAccountSerializer(serializers.ModelSerializer):
     total_interest = serializers.SerializerMethodField()
@@ -283,49 +284,64 @@ class SavingsAccountSerializer(serializers.ModelSerializer):
 
 
 
+
+
+
 class SavingsContributionSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = SavingsContribution
         fields = [
             'id',
             'member',
+            'saving',
             'contributed_amount',
-            'pension_percentage',
             'pension_amount',
             'vsla_amount',
             'transaction_id_c2b',
             'transaction_id_b2b',
             'created_at',
-            'completed_at'
-        ]
-        read_only_fields = [
-            'member',
-            'pension_percentage',
-            'pension_amount',
-            'vsla_amount',
-            'transaction_id_b2b',
-            'completed_at'
+            'completed_at',
         ]
 
-    def create(self, validated_data):
-        request = self.context.get('request')
-        if not request or not request.user.is_authenticated:
-            raise serializers.ValidationError("User not authenticated")
+    def validate_contributed_amount(self, value):
+        if isinstance(value, str):
+            value = value.strip()
+            if value == '':
+                raise serializers.ValidationError("Amount cannot be empty.")
+        try:
+            return Decimal(str(value))
+        except (InvalidOperation, ValueError, TypeError):
+            raise serializers.ValidationError("Amount must be a valid number.")
 
-        member = request.user
+    def validate_pension_amount(self, value):
+        if isinstance(value, str):
+            value = value.strip()
+            if value == '':
+                return Decimal('0.00')
+        try:
+            return Decimal(str(value))
+        except (InvalidOperation, ValueError, TypeError):
+            raise serializers.ValidationError("Pension amount must be a valid number.")
 
-      
-        savings_account, created = SavingsAccount.objects.get_or_create(
-            member=member,
-            defaults={'member_account_balance': 0.00}
-        )
+    def validate_vsla_amount(self, value):
+        if isinstance(value, str):
+            value = value.strip()
+            if value == '':
+                return Decimal('0.00')
+        try:
+            return Decimal(str(value))
+        except (InvalidOperation, ValueError, TypeError):
+            raise serializers.ValidationError("VSLA amount must be a valid number.")
 
-
-        return SavingsContribution.objects.create(
-            member=member,
-            saving=savings_account,
-            **validated_data
-        )
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        member = instance.member
+        data['member_first_name'] = member.first_name
+        data['member_last_name'] = member.last_name
+        data['member_phone'] = member.phone_number
+        data['member_national_id'] = member.national_id
+        return data
 
 class VSLAAccountSerializer(serializers.ModelSerializer):
     class Meta:
