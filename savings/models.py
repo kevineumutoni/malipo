@@ -1,16 +1,20 @@
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
-from users.models import User
+from decimal import Decimal, InvalidOperation
+from django.core.validators import MinValueValidator
 from pension.models import PensionAccount
 from transaction.models import Transaction
 from transaction.daraja import DarajaAPI
-from decimal import Decimal, InvalidOperation
-
 
 class SavingsAccount(models.Model):
-    member = models.ForeignKey(User, on_delete=models.CASCADE, related_name='savings_account')
-    member_account_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    interest_incurred = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    member = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='savings_accounts' 
+    )
+    member_account_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    interest_incurred = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -21,23 +25,23 @@ class SavingsAccount(models.Model):
         return f"{self.member.first_name}'s Savings: KES {self.member_account_balance}"
 
 
-
-
-
-from django.db import models
-from django.conf import settings 
-from django.utils import timezone
-from decimal import Decimal, InvalidOperation
-from transaction.models import Transaction
-
-
-from django.core.validators import MinValueValidator
-
 class SavingsContribution(models.Model):
+    member = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='savings_contributions' 
+    )
+
+    saving = models.ForeignKey(
+        SavingsAccount,
+        on_delete=models.CASCADE,
+        related_name='contributions'
+    )
+
     contributed_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'))]  # Optional: prevent zero/negative
+        validators=[MinValueValidator(Decimal('0.01'))]
     )
     pension_amount = models.DecimalField(
         max_digits=10,
@@ -101,8 +105,7 @@ class SavingsContribution(models.Model):
                             amount=self.pension_amount
                         )
 
-                       
-                        national_id = self.member.national_id
+                        national_id = self.member.national_id or 'N/A'
                         description = f"Pension contribution for {self.member.first_name} (ID: {national_id})"
 
                         b2b_transaction = Transaction.objects.create(
@@ -124,7 +127,7 @@ class SavingsContribution(models.Model):
                         self.transaction_id_b2b = b2b_transaction
 
                 except Exception:
-                    pass  # Silent failure — don't block contribution
+                    pass
 
             self.completed_at = timezone.now()
 
