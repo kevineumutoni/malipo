@@ -1,1 +1,1 @@
-web: gunicorn malipoflex.wsgi -log-file -
+web: gunicorn malipoflex.wsgi
