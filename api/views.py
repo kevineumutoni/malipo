@@ -277,19 +277,19 @@ class SavingsAccountViewSet(viewsets.ModelViewSet):
 
 
 
-from rest_framework import viewsets
+
 from savings.models import SavingsContribution
 from .serializers import SavingsContributionSerializer
 
+
 class SavingsContributionViewSet(viewsets.ModelViewSet):
     serializer_class = SavingsContributionSerializer
-    queryset = SavingsContribution.objects.all()
 
     def get_queryset(self):
-        return self.queryset.filter(member=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save()
+        if self.request.user.is_authenticated:
+            return SavingsContribution.objects.filter(member=self.request.user)
+        else:
+            return SavingsContribution.objects.none() 
 
 
 class VSLAAccountViewSet(viewsets.ModelViewSet):
@@ -320,12 +320,11 @@ class PolicyViewSet(viewsets.ModelViewSet):
 
 class PensionAccountViewSet(viewsets.ModelViewSet):
     serializer_class = PensionAccountSerializer
-    queryset = PensionAccount.objects.all()
 
     def get_queryset(self):
-        return self.queryset.filter(member=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(member=self.request.user)
+        if self.request.user.is_authenticated:
+            return PensionAccount.objects.filter(member=self.request.user)
+        else:
+            return PensionAccount.objects.none()  # 👈 SAFE! Returns [] for anonymous users
 
    
