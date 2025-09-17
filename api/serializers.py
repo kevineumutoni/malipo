@@ -25,16 +25,12 @@ class LoanAccountSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_total_interest(self, obj):
-        """
-        Calculate total interest: Principal * 5% * (months/12)
-        """
+        
         years = obj.timeline_months / 12
         return (obj.requested_amount * 5.00 * years) / 100
 
     def get_total_repayment(self, obj):
-        """
-        Total repayment = Principal + Interest
-        """
+        
         return obj.requested_amount + self.get_total_interest(obj)
 
     def validate(self, data):
