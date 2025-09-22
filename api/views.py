@@ -17,13 +17,11 @@ from .serializers import (
 )
 from rest_framework.permissions import AllowAny
 from rest_framework.authentication import BasicAuthentication
-from rest_framework import permissions
 from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from .serializers import PensionSerializer, PolicySerializer
 from pension.models import Pension, PensionAccount
 from policy.models import Policy
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from django_filters.rest_framework import DjangoFilterBackend
 from users.models import User
@@ -31,10 +29,11 @@ from .serializers import UserRegisterSerializer, UserLoginSerializer, UserProfil
 from .serializers import UserSerializer
 from rest_framework.decorators import action, api_view
 from django.utils import timezone
-from rest_framework.response import Response
-from django.utils import timezone
 from datetime import timedelta
-from savings.models import SavingsContribution
+
+
+
+
 
 
 class LoanAccountViewSet(viewsets.ModelViewSet):
@@ -53,6 +52,7 @@ class LoanAccountViewSet(viewsets.ModelViewSet):
         if action == 'approve':
             loan.loan_status = 'APPROVED'
             notification = "Your loan has been approved. Funds will be sent shortly."
+
         elif action == 'reject':
             loan.loan_status = 'REJECTED'
             loan.rejection_reason = reason
@@ -122,10 +122,7 @@ class GuarantorViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def check_status(self, request, pk=None):
-        """
-        GET /api/guarantors/{id}/check_status/
-        Returns status + notification if expired.
-        """
+       
         guarantor = self.get_object()
         data = {
             "id": guarantor.id,
@@ -147,10 +144,7 @@ class GuarantorViewSet(viewsets.ModelViewSet):
 
 @api_view(['POST'])
 def expire_guarantors_manual(request):
-    """
-    POST /api/expire-guarantors/
-    Manually expire all pending guarantor requests older than 24 hours.
-    """
+    
     expired_count = Guarantor.objects.filter(
         status='Pending',
         created_at__lt=timezone.now() - timedelta(hours=24)
@@ -250,10 +244,7 @@ class SavingsAccountViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def apply_interest(self, request):
-        """
-        POST /api/savings-accounts/apply_interest/
-        Apply annual interest to all savings accounts.
-        """
+        
         accounts = self.get_queryset()
         results = []
 
@@ -278,9 +269,6 @@ class SavingsAccountViewSet(viewsets.ModelViewSet):
 
 
 
-from savings.models import SavingsContribution
-from .serializers import SavingsContributionSerializer
-
 
 class SavingsContributionViewSet(viewsets.ModelViewSet):
     serializer_class = SavingsContributionSerializer
@@ -303,9 +291,7 @@ class PensionViewSet(viewsets.ModelViewSet):
     serializer_class = PensionSerializer
 
 
-from rest_framework import generics
-from pension.models import Pension
-from .serializers import PensionSerializer
+
 
 class PensionProviderListView(generics.ListAPIView):
     serializer_class = PensionSerializer
@@ -325,6 +311,6 @@ class PensionAccountViewSet(viewsets.ModelViewSet):
         if self.request.user.is_authenticated:
             return PensionAccount.objects.filter(member=self.request.user)
         else:
-            return PensionAccount.objects.none()  # 👈 SAFE! Returns [] for anonymous users
+            return PensionAccount.objects.none() 
 
    
