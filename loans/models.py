@@ -2,8 +2,6 @@ from django.db import models
 from django.utils import timezone
 from users.models import User
 from transaction.models import Transaction
-
-
 from django.db import models
 from django.utils import timezone
 from datetime import timedelta
@@ -95,17 +93,12 @@ class LoanAccount(models.Model):
 
 
     def calculate_total_interest(self):
-        """
-        Calculate total interest for the loan term.
-        Formula: Principal * Rate * Time (in years)
-        """
+        
         years = self.timeline_months / 12
         return (self.requested_amount * self.ANNUAL_INTEREST_RATE * years) / 100
 
     def calculate_total_repayment(self):
-        """
-        Calculate total amount to repay (principal + interest).
-        """
+        
         return self.requested_amount + self.calculate_total_interest()
 
 
